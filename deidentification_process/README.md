@@ -11,6 +11,41 @@ Educational tutoring sessions generate transcripts containing sensitive student 
 3. **Flexible Configuration**: Supports replace or redact modes per PII category
 4. **Reproducibility**: Seed-based generation for consistent de-identification
 
+## Key Features
+
+### Detection Features
+- **ASR-aware**: Detects spoken patterns like "five five five one two three four" for phone numbers
+- **Line-initial names**: Catches names at the start of utterances ("Jayden, can you help?")
+- **Educational context filtering**: Avoids false positives from math problems
+- **Bilingual support**: Filters Spanish false positives common in tutoring transcripts
+- **Post-processing**: Reclassifies locations that are actually common names
+
+### Replacement Features
+- **Initial preservation**: "Maria" → "Morgan" (preserves M)
+- **Gender preservation**: Female names replaced with female names
+- **Cultural matching**: Names matched by country of origin
+- **Format preservation**: Phone/date formats maintained
+- **Consistent mapping**: Same input always produces same output (with seed)
+- **Compound name handling**: "Tutor Williams" → "Tutor Wallace"
+
+## Data Flow
+
+```mermaid
+flowchart TD
+    A[Raw Transcript JSON] --> B[PII Detection]
+    B --> |spaCy NER + Custom Patterns| C[AnnotatedTranscript<br/>distinct_pii + occurrences]
+    C --> D[PII Replacement]
+    D --> |Faker + names_dataset| E[De-identified Transcript]
+    D --> F[Re-identification Dict]
+```
+
+## Known Limitations
+
+1. **Math context**: Numbers in word problems may occasionally be flagged as ages
+2. **Ambiguous names**: Some words can be both names and common words (e.g., "Rose")
+3. **Compound names**: Very long compound names may not be detected as single units
+4. **Non-English**: Primary support is for English; limited Spanish false-positive filtering
+
 ## Project Structure
 
 ```
@@ -198,41 +233,6 @@ pytest --cov=detection --cov=replacement
 pytest detection/tests/
 pytest replacement/tests/
 ```
-
-## Key Features
-
-### Detection Features
-- **ASR-aware**: Detects spoken patterns like "five five five one two three four" for phone numbers
-- **Line-initial names**: Catches names at the start of utterances ("Jayden, can you help?")
-- **Educational context filtering**: Avoids false positives from math problems
-- **Bilingual support**: Filters Spanish false positives common in tutoring transcripts
-- **Post-processing**: Reclassifies locations that are actually common names
-
-### Replacement Features
-- **Initial preservation**: "Maria" → "Morgan" (preserves M)
-- **Gender preservation**: Female names replaced with female names
-- **Cultural matching**: Names matched by country of origin
-- **Format preservation**: Phone/date formats maintained
-- **Consistent mapping**: Same input always produces same output (with seed)
-- **Compound name handling**: "Tutor Williams" → "Tutor Wallace"
-
-## Data Flow
-
-```mermaid
-flowchart TD
-    A[Raw Transcript JSON] --> B[PII Detection<br/>detection/]
-    B --> |spaCy NER + Custom Patterns| C[AnnotatedTranscript<br/>distinct_pii + occurrences]
-    C --> D[PII Replacement<br/>replacement/]
-    D --> |Faker + names_dataset| E[De-identified Transcript]
-    D --> F[Re-identification Dict]
-```
-
-## Known Limitations
-
-1. **Math context**: Numbers in word problems may occasionally be flagged as ages
-2. **Ambiguous names**: Some words can be both names and common words (e.g., "Rose")
-3. **Compound names**: Very long compound names may not be detected as single units
-4. **Non-English**: Primary support is for English; limited Spanish false-positive filtering
 
 ## Contributing
 
